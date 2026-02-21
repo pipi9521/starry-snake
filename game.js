@@ -1,4 +1,4 @@
-// game.js - Starry Snake (Difficulty Selector Update)
+// game.js - Starry Snake (With 8-bit BGM)
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -15,7 +15,7 @@ const hud = {
 // --- Config ---
 const GRID_SIZE = 25; 
 const PARTICLE_LIFETIME = 30;
-let BASE_SPEED = 120; // Default, changeable by user
+let BASE_SPEED = 120; 
 const MIN_SPEED = 30;
 const LEVEL_THRESHOLD = 10; 
 const COLORS = {
@@ -45,9 +45,12 @@ let stars = [];
 let isWarping = false;
 let warpTimer = 0;
 
-// --- Audio ---
+// --- Audio System (SFX + BGM) ---
 let audioCtx;
 let isAudioInit = false;
+let bgmNodes = []; // Store oscillators to stop them
+let bgmInterval = null;
+let bgmStep = 0;
 
 function initAudio() {
     if (isAudioInit) return;
@@ -70,10 +73,10 @@ function playSound(type) {
     const now = audioCtx.currentTime;
 
     if (type === 'eat') {
-        osc.type = 'sine';
+        osc.type = 'square';
         osc.frequency.setValueAtTime(800, now);
         osc.frequency.exponentialRampToValueAtTime(1600, now + 0.1);
-        gainNode.gain.setValueAtTime(0.2, now);
+        gainNode.gain.setValueAtTime(0.1, now);
         gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
         osc.start(now);
         osc.stop(now + 0.1);
@@ -81,7 +84,7 @@ function playSound(type) {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(100, now);
         osc.frequency.exponentialRampToValueAtTime(20, now + 0.5);
-        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.setValueAtTime(0.2, now);
         gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
         osc.start(now);
         osc.stop(now + 0.5);
@@ -94,6 +97,100 @@ function playSound(type) {
         osc.start(now);
         osc.stop(now + 1.5);
     }
+}
+
+// --- 8-bit BGM Synthesizer ---
+// A simple sequencer playing a looping melody
+const BGM_TEMPO = 150; // BPM
+const NOTE_LENGTH = 60 / BGM_TEMPO / 4; // 16th notes
+
+// Notes frequencies (Hz)
+const N = {
+    C2: 65.41, D2: 73.42, Eb2: 77.78, E2: 82.41, F2: 87.31, G2: 98.00,
+    C3: 130.81, Eb3: 155.56, G3: 196.00, Bb3: 233.08,
+    C4: 261.63, Eb4: 311.13, F4: 349.23, G4: 392.00, Bb4: 466.16, C5: 523.25
+};
+
+// Melody Pattern (Bass + Lead interleaved logic)
+// We will procedurally generate a tense arpeggio
+function startBGM() {
+    if (!audioCtx || bgmInterval) return;
+    
+    bgmStep = 0;
+    const lookahead = 0.1; // seconds
+    let nextNoteTime = audioCtx.currentTime;
+
+    bgmInterval = setInterval(() => {
+        if (!isRunning || isPaused) return;
+
+        while (nextNoteTime < audioCtx.currentTime + lookahead) {
+            playBGMStep(nextNoteTime);
+            nextNoteTime += NOTE_LENGTH;
+        }
+    }, 50);
+}
+
+function stopBGM() {
+    if (bgmInterval) {
+        clearInterval(bgmInterval);
+        bgmInterval = null;
+    }
+    // Cancel scheduled sounds? Not easily possible without storing every node, 
+    // but they are short enough to just finish naturally.
+}
+
+function playBGMStep(time) {
+    const oscBass = audioCtx.createOscillator();
+    const gainBass = audioCtx.createGain();
+    oscBass.connect(gainBass);
+    gainBass.connect(audioCtx.destination);
+
+    const oscLead = audioCtx.createOscillator();
+    const gainLead = audioCtx.createGain();
+    oscLead.connect(gainLead);
+    gainLead.connect(audioCtx.destination);
+
+    // 16-step pattern loop
+    const step = bgmStep % 16;
+
+    // Bass Line (Driving C Minor)
+    // C2 C2 C2 C2 Eb2 Eb2 G2 G2
+    let bassFreq = N.C2;
+    if (step >= 8 && step < 12) bassFreq = N.Eb2;
+    if (step >= 12) bassFreq = N.G2;
+    
+    // Rhythm: play on every step but emphasize beat
+    oscBass.type = 'sawtooth';
+    oscBass.frequency.value = bassFreq;
+    gainBass.gain.setValueAtTime(0.15, time);
+    gainBass.gain.exponentialRampToValueAtTime(0.01, time + NOTE_LENGTH);
+    oscBass.start(time);
+    oscBass.stop(time + NOTE_LENGTH);
+
+    // Lead Arpeggio (Tense)
+    // C4 Eb4 G4 C5 ...
+    const arp = [N.C4, N.Eb4, N.G4, N.C5];
+    let leadFreq = arp[step % 4];
+    
+    // Variation every 4 bars
+    if (Math.floor(bgmStep / 32) % 2 === 1) {
+        // Higher octave variation
+        leadFreq *= 2; 
+    }
+
+    // Only play lead on certain steps to create rhythm
+    // x x x - x x - x
+    const pattern = [1, 1, 1, 0, 1, 1, 0, 1]; 
+    if (pattern[step % 8]) {
+        oscLead.type = 'square';
+        oscLead.frequency.value = leadFreq;
+        gainLead.gain.setValueAtTime(0.08, time);
+        gainLead.gain.exponentialRampToValueAtTime(0.01, time + NOTE_LENGTH);
+        oscLead.start(time);
+        oscLead.stop(time + NOTE_LENGTH);
+    }
+
+    bgmStep++;
 }
 
 // --- Star System ---
@@ -239,6 +336,7 @@ function checkLevelUp() {
 function gameOver() {
     isRunning = false;
     isWarping = false;
+    stopBGM(); // Stop music
     playSound('die');
     statusText.textContent = "CRITICAL FAILURE";
     uiOverlay.classList.remove('hidden');
@@ -264,7 +362,7 @@ function resetGame() {
     nextDirection = { x: 1, y: 0 };
     score = 0;
     level = 1;
-    speed = BASE_SPEED; // Use selected base speed
+    speed = BASE_SPEED; 
     particles = [];
     isWarping = false;
     
@@ -278,6 +376,8 @@ function resetGame() {
     
     if (gameInterval) clearInterval(gameInterval);
     gameInterval = setInterval(gameLoop, speed);
+    
+    startBGM(); // Start music
     
     if (!animationId) requestAnimationFrame(render);
 }
@@ -302,7 +402,7 @@ function update() {
 
     snake.unshift(head);
 
-    // Eat food logic with lenient distance check for grid safety
+    // Eat food logic
     const dist = Math.hypot(head.x - food.x, head.y - food.y);
     if (dist < 5) {
         score += 1;
@@ -381,11 +481,8 @@ function gameLoop() {
 // --- Difficulty Handling ---
 diffBtns.forEach(btn => {
     btn.addEventListener('click', (e) => {
-        // Remove active class from all
         diffBtns.forEach(b => b.classList.remove('active'));
-        // Add to clicked
         e.target.classList.add('active');
-        // Set speed
         BASE_SPEED = parseInt(e.target.dataset.speed);
     });
 });
@@ -417,8 +514,10 @@ window.addEventListener('keydown', e => {
                     document.querySelector('#ui-overlay h1').textContent = "PAUSED";
                     startBtn.textContent = "RESUME";
                     statusText.textContent = "PAUSED";
+                    stopBGM(); // Stop music on pause
                 } else {
                     statusText.textContent = "SYSTEM NOMINAL";
+                    startBGM(); // Resume music
                 }
             }
             break;
@@ -430,6 +529,7 @@ startBtn.addEventListener('click', () => {
         isPaused = false;
         uiOverlay.classList.add('hidden');
         statusText.textContent = "SYSTEM NOMINAL";
+        startBGM();
     } else {
         resetGame();
     }
