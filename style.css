@@ -141,17 +141,17 @@ canvas {
     transform: translate(-50%, -50%);
     text-align: center;
     background: rgba(5, 5, 10, 0.9);
-    padding: 3rem;
+    padding: 2rem; /* Reduced padding for more content */
     border: 1px solid var(--star-blue);
     box-shadow: 0 0 30px rgba(68, 138, 255, 0.2);
     border-radius: 4px;
     z-index: 30;
-    min-width: 300px;
+    min-width: 320px;
 }
 
 h1 {
     font-size: 3rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     background: linear-gradient(to right, #fff, #448aff);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -160,14 +160,14 @@ h1 {
 }
 
 p {
-    font-size: 1.2rem;
-    margin: 0.8rem 0;
+    font-size: 1.1rem;
+    margin: 0.5rem 0;
     color: #ccd;
 }
 
 .hint {
     color: var(--warp-purple);
-    font-size: 1rem;
+    font-size: 0.9rem;
     margin-top: 1rem;
     font-style: italic;
 }
@@ -186,8 +186,8 @@ button {
     border: 2px solid var(--snake-cyan);
     color: var(--snake-cyan);
     font-size: 1.4rem;
-    padding: 12px 40px;
-    margin-top: 30px;
+    padding: 10px 30px;
+    margin-top: 20px;
     cursor: pointer;
     font-family: inherit;
     text-transform: uppercase;
@@ -205,4 +205,49 @@ button:hover {
 
 .hidden {
     display: none !important;
+}
+
+/* Difficulty Selector */
+.difficulty-selector {
+    margin: 1.5rem 0;
+    text-align: center;
+}
+
+.difficulty-selector p {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    color: var(--star-blue);
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.btn-group {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.diff-btn {
+    font-size: 0.9rem;
+    padding: 8px 15px;
+    border: 1px solid #445577;
+    background: rgba(0,0,0,0.5);
+    color: #8899cc;
+    margin-top: 0; /* Override default button margin */
+    min-width: 80px;
+}
+
+.diff-btn:hover {
+    background: rgba(68, 138, 255, 0.2);
+    color: #fff;
+    border-color: var(--star-blue);
+    box-shadow: none;
+    text-shadow: none;
+}
+
+.diff-btn.active {
+    background: var(--star-blue);
+    color: #fff;
+    border-color: var(--star-blue);
+    box-shadow: 0 0 10px var(--star-blue);
 }

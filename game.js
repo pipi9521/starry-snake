@@ -1,10 +1,11 @@
-// game.js - Starry Snake (Refined Logic)
+// game.js - Starry Snake (Difficulty Selector Update)
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const uiOverlay = document.getElementById('ui-overlay');
 const startBtn = document.getElementById('start-btn');
 const statusText = document.getElementById('status-text');
+const diffBtns = document.querySelectorAll('.diff-btn');
 const hud = {
     score: document.getElementById('score-display'),
     level: document.getElementById('level-display'),
@@ -14,7 +15,7 @@ const hud = {
 // --- Config ---
 const GRID_SIZE = 25; 
 const PARTICLE_LIFETIME = 30;
-const BASE_SPEED = 120; 
+let BASE_SPEED = 120; // Default, changeable by user
 const MIN_SPEED = 30;
 const LEVEL_THRESHOLD = 10; 
 const COLORS = {
@@ -95,7 +96,7 @@ function playSound(type) {
     }
 }
 
-// --- Star System (Background) ---
+// --- Star System ---
 class Star {
     constructor() {
         this.reset();
@@ -182,32 +183,23 @@ function spawnParticles(x, y, count = 20, color) {
 
 // --- Game Core ---
 function resize() {
-    // Get the computed size of the wrapper div
     const wrapper = document.getElementById('game-wrapper');
     const rect = wrapper.getBoundingClientRect();
     
     canvas.width = rect.width;
     canvas.height = rect.height;
     
-    // Snap logical grid to fit exactly
     cols = Math.floor(canvas.width / GRID_SIZE);
     rows = Math.floor(canvas.height / GRID_SIZE);
     
-    // Adjust canvas size to perfect multiple of GRID_SIZE to avoid edge gaps
-    // We can center the playable area or just clip the excess
-    // Let's adjust logical width/height to match cols*rows
     width = cols * GRID_SIZE;
     height = rows * GRID_SIZE;
-    
-    // Center the rendering context if needed, or just let the CSS border handle it.
-    // Since we want strict bounds, let's keep it simple: 
-    // Playable area is (0,0) to (width, height).
 }
 
 window.addEventListener('resize', () => {
     resize();
     initStars();
-    if (!isRunning) spawnFood(); // Re-spawn food if resized while stopped
+    if (!isRunning) spawnFood();
 });
 resize();
 initStars();
@@ -215,14 +207,10 @@ initStars();
 function spawnFood() {
     let valid = false;
     while (!valid) {
-        // Random grid position
         const c = Math.floor(Math.random() * cols);
         const r = Math.floor(Math.random() * rows);
-        
         food.x = c * GRID_SIZE;
         food.y = r * GRID_SIZE;
-        
-        // Ensure not on snake
         valid = !snake.some(seg => seg.x === food.x && seg.y === food.y);
     }
 }
@@ -230,7 +218,8 @@ function spawnFood() {
 function updateHUD() {
     hud.score.textContent = score;
     hud.level.textContent = level;
-    const spd = Math.round((BASE_SPEED - speed + 10) / 10);
+    // Speed display: Show relative factor based on BASE_SPEED
+    const spd = Math.round((200 - speed) / 10);
     hud.speed.textContent = spd;
 }
 
@@ -260,7 +249,7 @@ function gameOver() {
 
 function resetGame() {
     initAudio();
-    resize(); // Ensure dimensions are fresh
+    resize(); 
     
     const startCol = Math.floor(cols / 2);
     const startRow = Math.floor(rows / 2);
@@ -275,7 +264,7 @@ function resetGame() {
     nextDirection = { x: 1, y: 0 };
     score = 0;
     level = 1;
-    speed = BASE_SPEED;
+    speed = BASE_SPEED; // Use selected base speed
     particles = [];
     isWarping = false;
     
@@ -299,15 +288,12 @@ function update() {
     direction = nextDirection;
     const head = { x: snake[0].x + direction.x * GRID_SIZE, y: snake[0].y + direction.y * GRID_SIZE };
 
-    // Wall collision (Strict bounds)
-    // width/height are calculated as cols*GRID_SIZE, so valid range is 0 to width-GRID_SIZE
     if (head.x < 0 || head.x >= width || head.y < 0 || head.y >= height) {
         spawnParticles(snake[0].x, snake[0].y, 50, COLORS.snakeHead);
         gameOver();
         return;
     }
 
-    // Self collision
     if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
         spawnParticles(head.x, head.y, 50, COLORS.snakeHead);
         gameOver();
@@ -316,8 +302,9 @@ function update() {
 
     snake.unshift(head);
 
-    // Eat food logic
-    if (head.x === food.x && head.y === food.y) {
+    // Eat food logic with lenient distance check for grid safety
+    const dist = Math.hypot(head.x - food.x, head.y - food.y);
+    if (dist < 5) {
         score += 1;
         spawnParticles(food.x + GRID_SIZE/2, food.y + GRID_SIZE/2, 30, COLORS.food);
         playSound('eat');
@@ -330,17 +317,13 @@ function update() {
 }
 
 function render() {
-    // Clear whole canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw Background Grid (Optional visual guide for bounds)
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    // Draw boundary box
     ctx.strokeRect(0, 0, width, height); 
     
-    // Draw Stars
     let starSpeed = isWarping ? 40 : 2;
     if (!isWarping && isRunning) starSpeed = 2 + (level * 0.5);
     
@@ -357,17 +340,14 @@ function render() {
         }
     }
 
-    // Draw Food
     ctx.shadowBlur = 20;
     ctx.shadowColor = COLORS.food;
     ctx.fillStyle = COLORS.food;
     ctx.beginPath();
-    // Center in grid cell
     ctx.arc(food.x + GRID_SIZE/2, food.y + GRID_SIZE/2, GRID_SIZE/2 - 4, 0, Math.PI*2);
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // Draw Snake
     ctx.shadowBlur = 25;
     ctx.shadowColor = COLORS.snakeHead;
     
@@ -383,7 +363,6 @@ function render() {
         }
     });
 
-    // Draw Particles
     particles.forEach((p, index) => {
         if (p.life <= 0) particles.splice(index, 1);
         else {
@@ -398,6 +377,18 @@ function render() {
 function gameLoop() {
     update();
 }
+
+// --- Difficulty Handling ---
+diffBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        // Remove active class from all
+        diffBtns.forEach(b => b.classList.remove('active'));
+        // Add to clicked
+        e.target.classList.add('active');
+        // Set speed
+        BASE_SPEED = parseInt(e.target.dataset.speed);
+    });
+});
 
 // --- Input ---
 window.addEventListener('keydown', e => {
@@ -416,8 +407,6 @@ window.addEventListener('keydown', e => {
             if (direction.x === 0) nextDirection = { x: 1, y: 0 }; break;
         case ' ':
             if (!isRunning && uiOverlay.classList.contains('hidden')) {
-                // Game Over state, ignore space or map to restart?
-                // Let's make space restart if game over
                 if (statusText.textContent === "CRITICAL FAILURE") resetGame();
             } else if (!isRunning) {
                 resetGame();
