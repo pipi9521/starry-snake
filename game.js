@@ -1,4 +1,4 @@
-// game.js - Starry Snake (With 8-bit BGM)
+// game.js - Starry Snake (Strict Grid Sizing Fix)
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -48,7 +48,7 @@ let warpTimer = 0;
 // --- Audio System (SFX + BGM) ---
 let audioCtx;
 let isAudioInit = false;
-let bgmNodes = []; // Store oscillators to stop them
+let bgmNodes = [];
 let bgmInterval = null;
 let bgmStep = 0;
 
@@ -100,24 +100,20 @@ function playSound(type) {
 }
 
 // --- 8-bit BGM Synthesizer ---
-// A simple sequencer playing a looping melody
-const BGM_TEMPO = 150; // BPM
-const NOTE_LENGTH = 60 / BGM_TEMPO / 4; // 16th notes
+const BGM_TEMPO = 150; 
+const NOTE_LENGTH = 60 / BGM_TEMPO / 4; 
 
-// Notes frequencies (Hz)
 const N = {
     C2: 65.41, D2: 73.42, Eb2: 77.78, E2: 82.41, F2: 87.31, G2: 98.00,
     C3: 130.81, Eb3: 155.56, G3: 196.00, Bb3: 233.08,
     C4: 261.63, Eb4: 311.13, F4: 349.23, G4: 392.00, Bb4: 466.16, C5: 523.25
 };
 
-// Melody Pattern (Bass + Lead interleaved logic)
-// We will procedurally generate a tense arpeggio
 function startBGM() {
     if (!audioCtx || bgmInterval) return;
     
     bgmStep = 0;
-    const lookahead = 0.1; // seconds
+    const lookahead = 0.1; 
     let nextNoteTime = audioCtx.currentTime;
 
     bgmInterval = setInterval(() => {
@@ -135,8 +131,6 @@ function stopBGM() {
         clearInterval(bgmInterval);
         bgmInterval = null;
     }
-    // Cancel scheduled sounds? Not easily possible without storing every node, 
-    // but they are short enough to just finish naturally.
 }
 
 function playBGMStep(time) {
@@ -150,16 +144,12 @@ function playBGMStep(time) {
     oscLead.connect(gainLead);
     gainLead.connect(audioCtx.destination);
 
-    // 16-step pattern loop
     const step = bgmStep % 16;
 
-    // Bass Line (Driving C Minor)
-    // C2 C2 C2 C2 Eb2 Eb2 G2 G2
     let bassFreq = N.C2;
     if (step >= 8 && step < 12) bassFreq = N.Eb2;
     if (step >= 12) bassFreq = N.G2;
     
-    // Rhythm: play on every step but emphasize beat
     oscBass.type = 'sawtooth';
     oscBass.frequency.value = bassFreq;
     gainBass.gain.setValueAtTime(0.15, time);
@@ -167,19 +157,13 @@ function playBGMStep(time) {
     oscBass.start(time);
     oscBass.stop(time + NOTE_LENGTH);
 
-    // Lead Arpeggio (Tense)
-    // C4 Eb4 G4 C5 ...
     const arp = [N.C4, N.Eb4, N.G4, N.C5];
     let leadFreq = arp[step % 4];
     
-    // Variation every 4 bars
     if (Math.floor(bgmStep / 32) % 2 === 1) {
-        // Higher octave variation
         leadFreq *= 2; 
     }
 
-    // Only play lead on certain steps to create rhythm
-    // x x x - x x - x
     const pattern = [1, 1, 1, 0, 1, 1, 0, 1]; 
     if (pattern[step % 8]) {
         oscLead.type = 'square';
@@ -283,14 +267,17 @@ function resize() {
     const wrapper = document.getElementById('game-wrapper');
     const rect = wrapper.getBoundingClientRect();
     
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+    // Calculate how many full columns and rows fit
+    cols = Math.floor(rect.width / GRID_SIZE);
+    rows = Math.floor(rect.height / GRID_SIZE);
     
-    cols = Math.floor(canvas.width / GRID_SIZE);
-    rows = Math.floor(canvas.height / GRID_SIZE);
-    
+    // Set logical width/height to exactly fit grid
     width = cols * GRID_SIZE;
     height = rows * GRID_SIZE;
+
+    // Force canvas pixel size to match grid (Strict Sizing)
+    canvas.width = width;
+    canvas.height = height;
 }
 
 window.addEventListener('resize', () => {
@@ -315,7 +302,6 @@ function spawnFood() {
 function updateHUD() {
     hud.score.textContent = score;
     hud.level.textContent = level;
-    // Speed display: Show relative factor based on BASE_SPEED
     const spd = Math.round((200 - speed) / 10);
     hud.speed.textContent = spd;
 }
@@ -336,7 +322,7 @@ function checkLevelUp() {
 function gameOver() {
     isRunning = false;
     isWarping = false;
-    stopBGM(); // Stop music
+    stopBGM(); 
     playSound('die');
     statusText.textContent = "CRITICAL FAILURE";
     uiOverlay.classList.remove('hidden');
@@ -377,7 +363,7 @@ function resetGame() {
     if (gameInterval) clearInterval(gameInterval);
     gameInterval = setInterval(gameLoop, speed);
     
-    startBGM(); // Start music
+    startBGM(); 
     
     if (!animationId) requestAnimationFrame(render);
 }
@@ -388,6 +374,9 @@ function update() {
     direction = nextDirection;
     const head = { x: snake[0].x + direction.x * GRID_SIZE, y: snake[0].y + direction.y * GRID_SIZE };
 
+    // Strict boundary check
+    // Canvas is now exactly width x height. 
+    // Grid coords are 0..width-GRID_SIZE.
     if (head.x < 0 || head.x >= width || head.y < 0 || head.y >= height) {
         spawnParticles(snake[0].x, snake[0].y, 50, COLORS.snakeHead);
         gameOver();
@@ -402,9 +391,8 @@ function update() {
 
     snake.unshift(head);
 
-    // Eat food logic
-    const dist = Math.hypot(head.x - food.x, head.y - food.y);
-    if (dist < 5) {
+    // Strict hit test
+    if (head.x === food.x && head.y === food.y) {
         score += 1;
         spawnParticles(food.x + GRID_SIZE/2, food.y + GRID_SIZE/2, 30, COLORS.food);
         playSound('eat');
@@ -514,10 +502,10 @@ window.addEventListener('keydown', e => {
                     document.querySelector('#ui-overlay h1').textContent = "PAUSED";
                     startBtn.textContent = "RESUME";
                     statusText.textContent = "PAUSED";
-                    stopBGM(); // Stop music on pause
+                    stopBGM(); 
                 } else {
                     statusText.textContent = "SYSTEM NOMINAL";
-                    startBGM(); // Resume music
+                    startBGM(); 
                 }
             }
             break;
