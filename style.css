@@ -1,0 +1,208 @@
+:root {
+    --bg-color: #03030a;
+    --star-white: #e6e6ff;
+    --star-blue: #448aff;
+    --snake-cyan: #00e5ff;
+    --food-orange: #ffab40;
+    --warp-purple: #b388ff;
+    --hud-bg: rgba(10, 10, 20, 0.8);
+    --hud-border: rgba(68, 138, 255, 0.3);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: var(--bg-color);
+    background: radial-gradient(circle at center, #0a0a1f 0%, #03030a 100%);
+    font-family: 'Segoe UI', 'Roboto', sans-serif;
+    color: var(--star-white);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#star-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.main-layout {
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+    align-items: flex-start;
+    justify-content: center;
+    width: 90vw;
+    height: 90vh;
+}
+
+/* Game Area */
+#game-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: 3px solid var(--snake-cyan);
+    box-shadow: 0 0 40px rgba(0, 229, 255, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    flex: 1; /* Take all remaining space */
+    overflow: hidden; /* Ensure nothing visually spills */
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+}
+
+/* Sidebar / HUD */
+#hud-sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+}
+
+.hud-panel {
+    background: var(--hud-bg);
+    padding: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--hud-border);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+.hud-item:last-child {
+    border-bottom: none;
+}
+
+.hud-label {
+    font-size: 0.9rem;
+    color: #8899cc;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+}
+
+#score-display, #level-display, #speed-display {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--snake-cyan);
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+
+#level-display {
+    color: var(--warp-purple);
+    text-shadow: 0 0 10px rgba(179, 136, 255, 0.5);
+}
+
+.hud-info {
+    font-size: 0.9rem;
+    color: #6677aa;
+    font-family: monospace;
+    line-height: 1.5;
+    margin-top: auto; /* Push to bottom if needed */
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+}
+
+#status-text {
+    color: var(--snake-cyan);
+    font-weight: bold;
+}
+
+/* UI Overlay (Menu) */
+#ui-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    background: rgba(5, 5, 10, 0.9);
+    padding: 3rem;
+    border: 1px solid var(--star-blue);
+    box-shadow: 0 0 30px rgba(68, 138, 255, 0.2);
+    border-radius: 4px;
+    z-index: 30;
+    min-width: 300px;
+}
+
+h1 {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(to right, #fff, #448aff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+}
+
+p {
+    font-size: 1.2rem;
+    margin: 0.8rem 0;
+    color: #ccd;
+}
+
+.hint {
+    color: var(--warp-purple);
+    font-size: 1rem;
+    margin-top: 1rem;
+    font-style: italic;
+}
+
+.key {
+    border: 1px solid #445577;
+    padding: 3px 10px;
+    border-radius: 3px;
+    background: #111122;
+    color: #fff;
+    font-weight: bold;
+}
+
+button {
+    background: transparent;
+    border: 2px solid var(--snake-cyan);
+    color: var(--snake-cyan);
+    font-size: 1.4rem;
+    padding: 12px 40px;
+    margin-top: 30px;
+    cursor: pointer;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+button:hover {
+    background: rgba(0, 229, 255, 0.1);
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.4);
+    text-shadow: 0 0 8px rgba(0, 229, 255, 0.8);
+}
+
+.hidden {
+    display: none !important;
+}

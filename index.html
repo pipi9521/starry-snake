@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Starry Snake - 星空贪吃蛇</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="star-layer"></div>
+    
+    <div class="main-layout">
+        <!-- Game Area -->
+        <div id="game-wrapper">
+            <canvas id="gameCanvas"></canvas>
+            <div id="ui-overlay">
+                <h1>STARRY SNAKE</h1>
+                <p>按 <span class="key">空格</span> 开始/暂停</p>
+                <p>方向键 / WASD 控制移动</p>
+                <p class="hint">每 10 分加速一级，穿越虫洞！</p>
+                <button id="start-btn">START MISSION</button>
+            </div>
+        </div>
+
+        <!-- Sidebar / HUD -->
+        <div id="hud-sidebar">
+            <div class="hud-panel">
+                <div class="hud-item">
+                    <span class="hud-label">SCORE</span>
+                    <span id="score-display">0</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">LEVEL</span>
+                    <span id="level-display">1</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">SPEED</span>
+                    <span id="speed-display">1</span>
+                </div>
+            </div>
+            <div class="hud-info">
+                <p>STATUS: <span id="status-text">WAITING</span></p>
+                <p>SYSTEM: ONLINE</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
