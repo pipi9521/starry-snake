@@ -34,6 +34,7 @@ let cols, rows;
 let gameInterval = null;
 let animationId = null;
 let score = 0;
+let lastScore = 0;
 let level = 1;
 let speed = BASE_SPEED;
 let isRunning = false;
@@ -249,6 +250,13 @@ function spawnFood() {
 }
 
 function updateHUD() {
+    // Pulse animation on score increase
+    if (score > lastScore) {
+        hud.score.classList.remove('pulse');
+        void hud.score.offsetWidth; // Trigger reflow
+        hud.score.classList.add('pulse');
+        lastScore = score;
+    }
     hud.score.textContent = score;
     hud.level.textContent = level;
     const spd = Math.round((200 - speed) / 10);
@@ -267,6 +275,10 @@ function checkLevelUp() {
 function gameOver() {
     isRunning = false; isWarping = false; stopBGM(); playSound('die');
     statusText.textContent = "CRITICAL FAILURE";
+    // Screen shake effect
+    const wrapper = document.getElementById('game-wrapper');
+    wrapper.classList.add('shake');
+    setTimeout(() => wrapper.classList.remove('shake'), 500);
     uiOverlay.classList.remove('hidden');
     document.querySelector('#ui-overlay h1').textContent = "MISSION FAILED";
     startBtn.textContent = "RETRY MISSION";
