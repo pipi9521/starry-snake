@@ -49,6 +49,11 @@ let isWarping = false;
 let warpTimer = 0;
 let frameCount = 0; // For animations
 
+// Meteors
+let meteors = [];
+let meteorSpawnTimer = 0;
+const METEOR_SPAWN_INTERVAL = 180; // Frames between spawns (adjust for difficulty)
+
 // --- Audio System ---
 let audioCtx;
 let isAudioInit = false;
@@ -203,6 +208,134 @@ class Star {
 }
 function initStars() { stars = []; for(let i=0; i<400; i++) stars.push(new Star()); }
 
+// --- Meteors (Obstacles) ---
+class Meteor {
+    constructor() {
+        this.reset();
+    }
+    
+    reset() {
+        // Spawn from top or right edge
+        const fromTop = Math.random() > 0.3;
+        
+        if (fromTop) {
+            this.x = Math.random() * width;
+            this.y = -50;
+            this.vx = (Math.random() - 0.5) * 3;
+            this.vy = Math.random() * 2 + 1.5 + level * 0.2; // Faster as level increases
+        } else {
+            this.x = width + 50;
+            this.y = Math.random() * height;
+            this.vx = -(Math.random() * 2 + 1.5 + level * 0.2);
+            this.vy = (Math.random() - 0.5) * 2;
+        }
+        
+        this.size = GRID_SIZE * 0.8;
+        this.active = true;
+        this.trail = [];
+    }
+    
+    update() {
+        if (!this.active) return;
+        
+        // Add position to trail
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > 10) this.trail.shift();
+        
+        this.x += this.vx;
+        this.y += this.vy;
+        
+        // Check if off screen
+        if (this.x < -100 || this.x > width + 100 || this.y < -100 || this.y > height + 100) {
+            this.active = false;
+        }
+    }
+    
+    draw() {
+        if (!this.active) return;
+        
+        // Draw trail (meteor tail)
+        ctx.beginPath();
+        for (let i = 0; i < this.trail.length; i++) {
+            const t = this.trail[i];
+            const alpha = (i / this.trail.length) * 0.6;
+            const size = (i / this.trail.length) * this.size * 0.5;
+            
+            ctx.fillStyle = `rgba(255, 200, 100, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Draw meteor core
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#ff6b35';
+        ctx.fillStyle = '#ff8c42';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Inner bright core
+        ctx.fillStyle = '#ffdd00';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size / 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.shadowBlur = 0;
+    }
+    
+    // Check collision with a point (snake segment)
+    collidesWith(px, py, radius) {
+        if (!this.active) return false;
+        const dx = this.x - px;
+        const dy = this.y - py;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        return dist < (this.size / 2 + radius);
+    }
+}
+
+function spawnMeteor() {
+    // Find inactive meteor or create new one
+    let meteor = meteors.find(m => !m.active);
+    if (!meteor) {
+        meteor = new Meteor();
+        meteors.push(meteor);
+    } else {
+        meteor.reset();
+    }
+}
+
+function updateMeteors() {
+    if (!isRunning) return;
+    
+    // Spawn new meteor periodically
+    meteorSpawnTimer++;
+    const spawnInterval = Math.max(60, METEOR_SPAWN_INTERVAL - level * 15); // Faster at higher levels
+    if (meteorSpawnTimer >= spawnInterval) {
+        spawnMeteor();
+        meteorSpawnTimer = 0;
+    }
+    
+    // Update all meteors
+    meteors.forEach(m => m.update());
+}
+
+function checkMeteorCollision() {
+    if (!isRunning) return false;
+    
+    const head = snake[0];
+    const headCx = head.x + GRID_SIZE / 2;
+    const headCy = head.y + GRID_SIZE / 2;
+    const headRadius = GRID_SIZE / 2;
+    
+    for (const meteor of meteors) {
+        if (meteor.collidesWith(headCx, headCy, headRadius)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // --- Particles ---
 class Particle {
     constructor(x, y, color) {
@@ -295,6 +428,7 @@ function resetGame() {
     ];
     direction = { x: 1, y: 0 }; nextDirection = { x: 1, y: 0 };
     score = 0; level = 1; speed = BASE_SPEED; particles = []; isWarping = false;
+    meteors = []; meteorSpawnTimer = 0; // Reset meteors
     spawnFood(); updateHUD(); statusText.textContent = "SYSTEM NOMINAL";
     isRunning = true; isPaused = false; uiOverlay.classList.add('hidden');
     if (gameInterval) clearInterval(gameInterval);
@@ -336,6 +470,9 @@ function render() {
     let starSpeed = isWarping ? 40 : 2;
     if (!isWarping && isRunning) starSpeed = 2 + (level * 0.5);
     stars.forEach(star => { star.update(starSpeed); star.draw(); });
+
+    // Meteors (Obstacles)
+    meteors.forEach(meteor => meteor.draw());
 
     if (isWarping) { warpTimer--; if (warpTimer <= 0) { isWarping = false; statusText.textContent = "SYSTEM NOMINAL"; } }
 
@@ -436,7 +573,14 @@ function render() {
     animationId = requestAnimationFrame(render);
 }
 
-function gameLoop() { update(); }
+function gameLoop() { 
+    update(); 
+    updateMeteors();
+    if (checkMeteorCollision()) {
+        spawnParticles(snake[0].x, snake[0].y, 50, '#ff6b35');
+        gameOver();
+    }
+}
 
 diffBtns.forEach(btn => { btn.addEventListener('click', (e) => { diffBtns.forEach(b => b.classList.remove('active')); e.target.classList.add('active'); BASE_SPEED = parseInt(e.target.dataset.speed); }); });
 
