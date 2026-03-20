@@ -3,56 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Starry Snake - 星空贪吃蛇</title>
+    <title>STARRY SNAKE — 星空贪吃蛇</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- CRT Scanlines Overlay -->
+    <div class="crt-overlay"></div>
+    <!-- Star Layer -->
     <div id="star-layer"></div>
-    
-    <div class="main-layout">
-        <!-- Game Area -->
-        <div id="game-wrapper">
-            <canvas id="gameCanvas"></canvas>
-            <div id="ui-overlay">
-                <h1>STARRY SNAKE</h1>
-                <p>按 <span class="key">空格</span> 开始/暂停</p>
-                <p>方向键 / WASD 控制移动</p>
-                
-                <div class="difficulty-selector">
-                    <p>选择初始速度 (DIFFICULTY)</p>
-                    <div class="btn-group">
-                        <button class="diff-btn" data-speed="150">EASY</button>
-                        <button class="diff-btn active" data-speed="120">NORMAL</button>
-                        <button class="diff-btn" data-speed="80">HARD</button>
+    <!-- Grid Floor -->
+    <div class="grid-floor"></div>
+
+    <div class="shell">
+        <!-- HUD -->
+        <header class="hud">
+            <div class="hud__logo">
+                <span class="hud__logo-text">STARRY SNAKE</span>
+                <span class="hud__logo-sub">// ORGANIC BIOLOGY EDITION</span>
+            </div>
+            <div class="hud__stats">
+                <div class="stat">
+                    <span class="stat__label">SCORE</span>
+                    <span class="stat__value" id="score-display">0000</span>
+                </div>
+                <div class="stat stat--level">
+                    <span class="stat__label">LVL</span>
+                    <span class="stat__value" id="level-display">01</span>
+                </div>
+                <div class="stat stat--speed">
+                    <span class="stat__label">SPD</span>
+                    <span class="stat__value" id="speed-display">01</span>
+                </div>
+            </div>
+            <div class="hud__status">
+                <span class="status-dot"></span>
+                <span id="status-text">STANDBY</span>
+            </div>
+        </header>
+
+        <!-- Main Game Area -->
+        <main class="stage">
+            <div id="game-wrapper">
+                <canvas id="gameCanvas"></canvas>
+
+                <!-- Overlay Menu -->
+                <div id="ui-overlay" class="overlay">
+                    <div class="overlay__inner">
+                        <div class="overlay__badge">// SYSTEM READY</div>
+                        <h1 class="overlay__title">
+                            <span class="overlay__title-line">STARRY</span>
+                            <span class="overlay__title-line overlay__title-line--accent">SNAKE</span>
+                        </h1>
+                        <p class="overlay__subtitle">探索深空．吞噬能量．穿越虫洞</p>
+
+                        <div class="overlay__controls">
+                            <div class="control-hint">
+                                <kbd>SPACE</kbd>
+                                <span>开始 / 暂停</span>
+                            </div>
+                            <div class="control-hint">
+                                <kbd>↑↓←→</kbd><kbd>WASD</kbd>
+                                <span>控制方向</span>
+                            </div>
+                        </div>
+
+                        <div class="difficulty-selector">
+                            <p class="diff-label">// SELECT VELOCITY</p>
+                            <div class="btn-group">
+                                <button class="diff-btn" data-speed="180">TURBO</button>
+                                <button class="diff-btn active" data-speed="130">ORBIT</button>
+                                <button class="diff-btn" data-speed="85">WARP</button>
+                            </div>
+                        </div>
+
+                        <button id="start-btn" class="btn-primary">
+                            <span class="btn-primary__text">INITIALIZE</span>
+                            <span class="btn-primary__glitch"></span>
+                        </button>
+
+                        <p class="overlay__hint">每 10 分触发虫洞加速 · 蛇身发光越快越短</p>
                     </div>
                 </div>
 
-                <p class="hint">每 10 分加速一级，穿越虫洞！</p>
-                <button id="start-btn">START MISSION</button>
+                <!-- Pause Overlay -->
+                <div id="pause-overlay" class="overlay overlay--pause hidden">
+                    <div class="overlay__inner">
+                        <div class="overlay__badge">// PAUSED</div>
+                        <h1 class="overlay__title">
+                            <span class="overlay__title-line">SUSPENDED</span>
+                        </h1>
+                        <button id="resume-btn" class="btn-primary">
+                            <span class="btn-primary__text">RESUME</span>
+                        </button>
+                    </div>
+                </div>
             </div>
-        </div>
+        </main>
 
-        <!-- Sidebar / HUD -->
-        <div id="hud-sidebar">
-            <div class="hud-panel">
-                <div class="hud-item">
-                    <span class="hud-label">SCORE</span>
-                    <span id="score-display">0</span>
-                </div>
-                <div class="hud-item">
-                    <span class="hud-label">LEVEL</span>
-                    <span id="level-display">1</span>
-                </div>
-                <div class="hud-item">
-                    <span class="hud-label">SPEED</span>
-                    <span id="speed-display">1</span>
-                </div>
-            </div>
-            <div class="hud-info">
-                <p>STATUS: <span id="status-text">WAITING</span></p>
-                <p>SYSTEM: ONLINE</p>
-            </div>
-        </div>
+        <!-- Footer -->
+        <footer class="footer">
+            <span>PIPIP9521</span>
+            <span class="footer__sep">//</span>
+            <span>GNU GPL v3</span>
+        </footer>
     </div>
 
     <script src="game.js"></script>
